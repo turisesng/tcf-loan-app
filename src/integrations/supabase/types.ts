@@ -14,16 +14,279 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      consultation_bookings: {
+        Row: {
+          amount: number
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          message: string | null
+          payment_provider: string | null
+          payment_reference: string | null
+          phone: string
+          plan_id: string | null
+          preferred_date: string
+          preferred_time: string
+          status: Database["public"]["Enums"]["consultation_status"]
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          message?: string | null
+          payment_provider?: string | null
+          payment_reference?: string | null
+          phone: string
+          plan_id?: string | null
+          preferred_date: string
+          preferred_time: string
+          status?: Database["public"]["Enums"]["consultation_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          message?: string | null
+          payment_provider?: string | null
+          payment_reference?: string | null
+          phone?: string
+          plan_id?: string | null
+          preferred_date?: string
+          preferred_time?: string
+          status?: Database["public"]["Enums"]["consultation_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultation_bookings_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "consultation_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      consultation_plans: {
+        Row: {
+          created_at: string
+          description: string
+          duration_minutes: number
+          features: string[] | null
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          duration_minutes: number
+          features?: string[] | null
+          id?: string
+          is_active?: boolean
+          name: string
+          price: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          duration_minutes?: number
+          features?: string[] | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      purchases: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          download_expires_at: string | null
+          download_token: string | null
+          downloaded_at: string | null
+          email: string
+          id: string
+          payment_provider: string | null
+          payment_reference: string | null
+          status: Database["public"]["Enums"]["purchase_status"]
+          tool_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          download_expires_at?: string | null
+          download_token?: string | null
+          downloaded_at?: string | null
+          email: string
+          id?: string
+          payment_provider?: string | null
+          payment_reference?: string | null
+          status?: Database["public"]["Enums"]["purchase_status"]
+          tool_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          download_expires_at?: string | null
+          download_token?: string | null
+          downloaded_at?: string | null
+          email?: string
+          id?: string
+          payment_provider?: string | null
+          payment_reference?: string | null
+          status?: Database["public"]["Enums"]["purchase_status"]
+          tool_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchases_tool_id_fkey"
+            columns: ["tool_id"]
+            isOneToOne: false
+            referencedRelation: "tool_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tool_products: {
+        Row: {
+          category: string
+          code: string
+          created_at: string
+          description: string
+          download_count: number
+          features: string[] | null
+          file_path: string | null
+          id: string
+          is_active: boolean
+          long_description: string | null
+          name: string
+          preview_image: string | null
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          code: string
+          created_at?: string
+          description: string
+          download_count?: number
+          features?: string[] | null
+          file_path?: string | null
+          id?: string
+          is_active?: boolean
+          long_description?: string | null
+          name: string
+          preview_image?: string | null
+          price: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          code?: string
+          created_at?: string
+          description?: string
+          download_count?: number
+          features?: string[] | null
+          file_path?: string | null
+          id?: string
+          is_active?: boolean
+          long_description?: string | null
+          name?: string
+          preview_image?: string | null
+          price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
+      consultation_status: "pending" | "confirmed" | "completed" | "cancelled"
+      purchase_status: "pending" | "completed" | "failed" | "refunded"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +413,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+      consultation_status: ["pending", "confirmed", "completed", "cancelled"],
+      purchase_status: ["pending", "completed", "failed", "refunded"],
+    },
   },
 } as const
