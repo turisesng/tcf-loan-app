@@ -1,12 +1,18 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { sampleTools } from "@/data/tools";
-import { ArrowLeft, CheckCircle, Shield, Download, Mail } from "lucide-react";
+import { usePaystack } from "@/hooks/usePaystack";
+import { ArrowLeft, CheckCircle, Shield, Download, Mail, Loader2 } from "lucide-react";
 
 const ToolDetail = () => {
   const { toolId } = useParams<{ toolId: string }>();
   const tool = sampleTools.find((t) => t.id === toolId);
+  const [email, setEmail] = useState("");
+  const { initializePayment, isLoading } = usePaystack();
 
   if (!tool) {
     return (
@@ -38,6 +44,21 @@ const ToolDetail = () => {
     "Lifetime access to updates",
     "Email support included",
   ];
+
+  const handleBuyNow = async () => {
+    if (!email || !tool) return;
+    
+    await initializePayment({
+      email,
+      amount: tool.price,
+      metadata: {
+        type: "tool",
+        item_id: tool.id,
+        item_name: tool.name,
+      },
+      callback_url: `${window.location.origin}/payment/verify`,
+    });
+  };
 
   return (
     <Layout>
@@ -116,8 +137,38 @@ const ToolDetail = () => {
                   <p className="text-sm text-muted-foreground mt-1">One-time payment</p>
                 </div>
 
-                <Button variant="hero" size="lg" className="w-full mb-4">
-                  Buy Now - {formattedPrice}
+                <div className="space-y-4 mb-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Your tool will be sent to this email
+                    </p>
+                  </div>
+                </div>
+
+                <Button 
+                  variant="hero" 
+                  size="lg" 
+                  className="w-full mb-4"
+                  onClick={handleBuyNow}
+                  disabled={isLoading || !email}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    `Buy Now - ${formattedPrice}`
+                  )}
                 </Button>
 
                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
