@@ -38,6 +38,31 @@ serve(async (req: Request) => {
 
     console.log("Initializing payment:", { email, amount, type: metadata.type, item_id: metadata.item_id });
 
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // For tool purchases, look up the tool by code to get the UUID
+    let toolUuid: string | null = null;
+    if (metadata.type === "tool") {
+      const { data: tool, error: toolError } = await supabase
+        .from("tool_products")
+        .select("id")
+        .eq("code", metadata.item_id)
+        .maybeSingle();
+
+      if (toolError) {
+        console.error("Error looking up tool:", toolError);
+      }
+
+      if (tool) {
+        toolUuid = tool.id;
+        console.log("Found tool UUID:", toolUuid);
+      } else {
+        console.log("Tool not found by code, will store item_id in metadata only");
+      }
+    }
+
     // Amount should be in kobo (smallest currency unit)
     const amountInKobo = Math.round(amount * 100);
 
@@ -50,7 +75,10 @@ serve(async (req: Request) => {
       body: JSON.stringify({
         email,
         amount: amountInKobo,
-        metadata,
+        metadata: {
+          ...metadata,
+          tool_uuid: toolUuid, // Store the UUID in metadata for verification
+        },
         callback_url: callback_url || `${req.headers.get("origin")}/payment/verify`,
       }),
     });
@@ -65,15 +93,11 @@ serve(async (req: Request) => {
     console.log("Payment initialized successfully:", paystackData.data.reference);
 
     // Create pending record in database
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    if (metadata.type === "tool") {
+    if (metadata.type === "tool" && toolUuid) {
       const { error: insertError } = await supabase.from("purchases").insert({
         email,
         amount,
-        tool_id: metadata.item_id,
+        tool_id: toolUuid,
         payment_reference: paystackData.data.reference,
         payment_provider: "paystack",
         status: "pending",
@@ -82,6 +106,8 @@ serve(async (req: Request) => {
 
       if (insertError) {
         console.error("Error creating purchase record:", insertError);
+      } else {
+        console.log("Purchase record created successfully");
       }
     } else if (metadata.type === "consultation") {
       const { error: insertError } = await supabase.from("consultation_bookings").insert({
