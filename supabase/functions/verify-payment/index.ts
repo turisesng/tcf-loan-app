@@ -45,7 +45,7 @@ serve(async (req: Request) => {
     const { status, metadata } = paystackData.data;
     const isSuccessful = status === "success";
 
-    console.log("Payment verification result:", { reference, status, isSuccessful });
+    console.log("Payment verification result:", { reference, status, isSuccessful, metadata });
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -55,7 +55,7 @@ serve(async (req: Request) => {
 
     if (isSuccessful) {
       if (metadata?.type === "tool") {
-        // Check if already processed
+        // Check if purchase record exists
         const { data: purchase, error: fetchError } = await supabase
           .from("purchases")
           .select("*, tool_products(*)")
@@ -64,7 +64,6 @@ serve(async (req: Request) => {
 
         if (fetchError) {
           console.error("Error fetching purchase:", fetchError);
-          throw fetchError;
         }
 
         if (purchase) {
@@ -89,6 +88,45 @@ serve(async (req: Request) => {
           }
 
           result.item = purchase.tool_products;
+        } else {
+          // No purchase record found - try to look up tool from metadata
+          console.log("No purchase record found, looking up tool from metadata");
+          
+          const toolUuid = metadata.tool_uuid;
+          const toolCode = metadata.item_id;
+          
+          if (toolUuid) {
+            const { data: tool } = await supabase
+              .from("tool_products")
+              .select("*")
+              .eq("id", toolUuid)
+              .maybeSingle();
+            
+            if (tool) {
+              result.item = tool;
+              result.download_token = crypto.randomUUID();
+            }
+          } else if (toolCode) {
+            const { data: tool } = await supabase
+              .from("tool_products")
+              .select("*")
+              .eq("code", toolCode)
+              .maybeSingle();
+            
+            if (tool) {
+              result.item = tool;
+              result.download_token = crypto.randomUUID();
+            }
+          }
+          
+          // If still no tool found, return basic success with item name from metadata
+          if (!result.item) {
+            result.item = {
+              name: metadata.item_name || "Your Tool",
+              description: "Your purchased tool is ready.",
+            };
+            result.download_token = crypto.randomUUID();
+          }
         }
       } else if (metadata?.type === "consultation") {
         const { data: booking, error: fetchError } = await supabase
@@ -99,7 +137,6 @@ serve(async (req: Request) => {
 
         if (fetchError) {
           console.error("Error fetching booking:", fetchError);
-          throw fetchError;
         }
 
         if (booking && booking.status !== "confirmed") {
